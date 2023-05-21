@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<script src="index.js"></script>
+	<link rel="stylesheet" href="3-7.css">
+	<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=okvn2uf3b5&submodules=geocoder"></script>
+	<script>
+		function updateMapLocation(latitude, longitude) {
+        	var map = new naver.maps.Map('map', {
+            	center: new naver.maps.LatLng(latitude, longitude),
+            	zoom: 10
+        	});
+
+        	var mymarker = new naver.maps.Marker({
+            	position: new naver.maps.LatLng(latitude, longitude),
+            	map: map,
+            	icon: {
+            		url: 'file:///android_asset/circle.png',
+            		size: new naver.maps.Size(40,40),
+            		origin: new naver.maps.Point(0,0),
+            		anchor: new naver.maps.Point(20,20)
+            	}
+        	});
+
+        	const start="127.12345,37.12345";
+        	const goal="127.54321,38.12345";
+        	const url="https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start={start}&goal={goal}";
+        	const headers={
+        		"X-NCP-APIGW-API-KEY-ID": "okvn2uf3b5",
+				"X-NCP-APIGW-API-KEY": "SGrEf2z1p1mby1ERttcOUSWBeMNiuHDbPytcavqr",
+        	};
+
+        	fetch(url,headers)
+        		.then(response => response.json())
+        		.then(data=>{
+        			console.log(data);
+        		})
+        		.catch(error=>{
+        			console.log(error);
+        		});
+
+
+
+			/*
+				var infoContainer= document.getElementById('info-container');
+				var backBtn=document.getElementById('back');
+
+        		naver.maps.Event.addListener(marker,'click',function(){
+        			var info=document.getElementById('info');
+        			info.innerHTML='<object type="text/html" data="test.html"></object>';
+        			infoContainer.classList.add('expanded');
+        			backBtn.onclick=function(){
+        				infoContainer.classList.remove('expanded');
+        			};
+        		});
+        	*/
+			map.setCenter(new naver.maps.LatLng(37.541, 126.986));
+			mymarker.setPosition(new naver.maps.LatLng(37.541, 126.986));
+
+    	}
+
+	</script>
+</head>
+
+<body>
+<div id="container">
+	<div id="map"></div>
+	<div id="info-container">
+		<div><button id="back"></button></div>
+		<div id="info"></div>
+	</div>
+</div>
+
+<div id="nav-container">
+
+	<div id="search" class="nav-item">
+		<a href="search.html">
+			<i class="fas fa-search"></i>
+			<span>검색</span>
+		</a>
+	</div>
+
+	<div id="find" class="nav-item">
+		<a href="find.html">
+			<i class="fas fa-find"></i>
+			<span>탐색</span>
+		</a>
+	</div>
+
+	<div id="camera" class="nav-item">
+		<a href="camera.html">
+			<i class="fas fa-camera"></i>
+			<span>촬영</span>
+		</a>
+	</div>
+
+	<div id="recommend" class="nav-item">
+		<a href="recommend.html">
+			<i class="fas fa-star"></i>
+			<span>추천</span>
+		</a>
+	</div>
+
+	<div id="mypage" class="nav-item">
+		<a href="mypage.html">
+			<i class="fas fa-user"></i>
+			<span>마이페이지</span>
+		</a>
+	</div>
+
+</div>
+
+</body>
+</html>

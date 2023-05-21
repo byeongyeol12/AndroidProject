@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="index.js"></script>
+    <link rel="stylesheet" href="3-7.css">
+    <title>마이페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .mypage-container {
+            max-width: 400px;
+            width: 100%;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .mypage-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            margin-bottom: 20px;
+        }
+
+        .user-info label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            margin: 0;
+        }
+
+        .user-info .username {
+            font-weight: bold;
+        }
+
+        .user-info .email {
+            color: #777;
+        }
+
+        .logout-btn {
+            text-align: center;
+        }
+
+        .logout-btn button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #f44336;
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="mypage-container">
+    <h2>마이페이지</h2>
+    <div class="user-info">
+        <label for="username">사용자 이름:</label>
+        <p class="username">John Doe</p>
+        <label for="email">이메일:</label>
+        <p class="email">johndoe@example.com</p>
+    </div>
+    <div class="logout-btn">
+        <button type="button">로그아웃</button>
+    </div>
+</div>
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search"></i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find"></i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="camera.html">
+            <i class="fas fa-camera"></i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend.html">
+            <i class="fas fa-star"></i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="mypage.html">
+            <i class="fas fa-user"></i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

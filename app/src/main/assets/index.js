@@ -1,23 +1,30 @@
 
-
-WebView webView = (WebView) findViewById(R.id.web_view);
-webView.setWebViewClient(new WebViewClient());
-webView.getSettings().setJavaScriptEnabled(true);
-webView.loadUrl("file:///android_asset/3-8.html");
-
-webView.setWebViewClient(new WebViewClient() {
-    @Override
-    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        if (url.contains("#search")) {
-            // 검색 버튼 클릭 시 동작할 코드 작성
-        } else if (url.contains("#camera")) {
-            // 촬영 버튼 클릭 시 동작할 코드 작성
-        } else if (url.contains("#recommend")) {
-            // 추천 버튼 클릭 시 동작할 코드 작성
-        } else if (url.contains("#mypage")) {
-            // 마이페이지 버튼 클릭 시 동작할 코드 작성
-        }
-
-        return true;
-    }
+window.addEventListener("DOMContentLoaded", (event) => {
+    const navItems = document.querySelectorAll(".nav-item");
+    navItems.forEach((item) => {
+            item.addEventListener("click", (event) => {
+            // 클릭된 아이템에 대한 동작을 여기에 작성합니다.
+            // 예: 각 버튼에 맞는 페이지로 이동하도록 설정
+            const itemId = item.id;
+            switch (itemId) {
+                case "search":
+                    window.location.href = "file:///android_asset/search.html";
+                    break;
+                case "find":
+                    window.location.href = "file:///android_asset/find.html";
+                    break;
+                case "camera":
+                    window.location.href = "file:///android_asset/camera.html";
+                    break;
+                case "recommend":
+                    window.location.href = "file:///android_asset/recommend.html";
+                    break;
+                case "mypage":
+                    window.location.href = "file:///android_asset/mypage.html";
+                    break;
+                default:
+                    break;
+            }
+        });
+    });
 });

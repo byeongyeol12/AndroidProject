@@ -1,3 +1,16 @@
+
+#main-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#main-content img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 #nav-container {
   display: flex;
   justify-content: space-between;
@@ -8,7 +21,19 @@
   width: 100%;
   background-color: #ffffff;
   box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.25);
-  height: 64px;
+  height: 10vh;
+  z-index: 1002;
+}
+
+.nav-item i {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.nav-item img {
+    width: 40px;
+    height: auto;
+    margin-left: 5px;
 }
 
 .nav-item {
@@ -51,12 +76,10 @@
     z-index: 1;
 }
 
-/* find.html의 css */
-
 #container {
   position: relative;
   width: 100%;
-  height: 680px;
+  height: 90vh;
 }
 
 #map {
@@ -64,7 +87,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
 }
 
 #info-container {
@@ -83,3 +106,136 @@
   transform: translateY(0%);
 }
 
+
+#searchbox {
+  background-color: #f0f0f0;
+  padding: 15px;
+  position: fixed;
+  bottom: 90vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width:85%;
+  height:5%;
+  max-width: 400px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  z-index: 1000;
+}
+
+}
+
+#search-combobox {
+  display: flex;
+  padding-right:5px;
+  align-items: center;
+  order: 1;
+}
+
+#search-input {
+  width : 55%;
+  height : 9%;
+  padding: 15px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  order: 2;
+}
+
+#search-button {
+  padding-left:8px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 20px;
+  cursor: pointer;
+  order: 3;
+}
+
+#data-container {
+    margin-top: 90px;
+    margin-bottom: 150px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+#explain-container {
+    margin-top: 5px;
+    margin-bottom: 30px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+#camerares-container {
+    margin-top: 5px;
+    margin-bottom: 30px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* recommend.html의 css */
+.popup {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.popup-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+}
+
+#cancelButton {
+    margin: 10px;
+}
+
+#adjustButton {
+    margin: 10px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.modal-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+}
+
+.slide-in {
+  animation: slide-in 0.5s ease forwards;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

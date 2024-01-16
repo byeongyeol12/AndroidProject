@@ -3,99 +3,1469 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="index.js"></script>
     <link rel="stylesheet" href="3-7.css">
     <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=okvn2uf3b5&submodules=geocoder"></script>
-    <script>
-        var map;
-        var markerList = [];
+    <style>
 
-		function updateMapLocation(latitude, longitude) {
-        	map = new naver.maps.Map('map', {
-            	center: new naver.maps.LatLng(latitude, longitude),
-            	zoom: 12
-        	});
-
-        	var mymarker = new naver.maps.Marker({
-            	position: new naver.maps.LatLng(latitude, longitude),
-            	map: map,
-            	icon: {
-            		url: 'file:///android_asset/circle.png',
-            		size: new naver.maps.Size(40,40),
-            		origin: new naver.maps.Point(0,0),
-            		anchor: new naver.maps.Point(20,20)
-            	}
-        	});
-
-        	map.setCenter(new naver.maps.LatLng(37.541, 126.986));
-			mymarker.setPosition(new naver.maps.LatLng(37.541, 126.986));
-			markers(latitude, longitude);
-	    }
-
-
-        function markers(lat,lng) {
-
-            console.log(lat);
-            console.log(lng);
-
-            var marker = new naver.maps.Marker({
-                position: new naver.maps.LatLng(lat, lng),
-                map: map
-            });
-            markerList.push(marker);
-
-
-            // 마커를 지도에 표시
-            for (var j = 0; j < markerList.length; j++) {
-                markerList[j].setMap(map);
-            }
+        #slide-info-container {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #fff;
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 1;
+            height: 25%;
+            display: flex;
+            justify-content: space-between;
         }
 
-	</script>
+        #slide-guide-container {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #fff;
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 1;
+            height: 75%;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            overflow-y: auto;
+            max-height: 75%;
+        }
+
+        .slide-info {
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+        }
+
+        .image-container {
+            margin-right: 10px;
+        }
+
+        .text-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-info .text-container h2 {
+            font-size: 21px;
+            margin-top: -5px;
+        }
+
+        .slide-info .text-container .address {
+            font-size: 14px;
+            margin-top: -20px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+
+         .button-container button {
+            margin: 18px;
+            padding: 10px 20px;
+            background-color: #FF6F00;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+         }
+
+         .button-container button.guide-btn {
+            border-radius: 50%;
+            position: relative;
+            background-color: #FFAC4D;
+         }
+
+         .button-container button.guide-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            height: 2px;
+            width: 50px;
+            background-color: #000;
+         }
+
+         .button-container button.guide-btn.no-line::after {
+            display: none;
+         }
+
+         .guide-container {
+            height: 70%;
+            overflow-y: auto;
+         }
+
+         .button-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            height: 100px;
+         }
+
+         .button-item p {
+            font-size: 12px;
+            color: #555;
+         }
+
+         .arrow-container {
+            display: flex;
+            justify-content: center;
+         }
+
+        .arrow-btn {
+            margin-top: 10px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #FF6F00;
+        }
+    </style>
 </head>
 
 <body>
+
+
 <div id="container">
     <div id="map"></div>
-    <div id="info-container">
-        <div><button id="back"></button></div>
-        <div id="info"></div>
+</div>
+
+<script>
+        var params = new URLSearchParams(window.location.search);
+        var receivedInputValue = params.get('inputValue');
+        var receivedIsChecked = params.get('isChecked');
+        var receivedPathClick = params.get('pathClick');
+
+        var lat=0.0;
+        var lng=0.0;
+        var curLat=0.0; //현재위치 위도
+        var curLng=0.0; //현재위도 경도
+
+        var map;
+        var polylines = []; //경로 저장 배열
+        var overlays = []; //오버레이 저장 배열
+
+        var isDeleteMode = false; //삭제 모드 여부
+        var isPathGuide = false;
+
+        console.log(receivedInputValue);
+        console.log(receivedIsChecked);
+        console.log(receivedPathClick);
+
+        var markerArray=[];
+        var labelArray=[]; //라벨 표시용
+        var markersWithinRadius=[]; //경로내 마커 정보 배열
+        var sortedMarkers=[]; //마커 우선순위 정리한 것
+        var redMarkers=[]; //마감 임박한 문화재 저장하는 배열
+
+
+        //촬영 버튼 클릭 시 동작하는 함수
+        function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+        }
+
+        //마이페이지 버튼 클릭 시 동작하는 함수
+        function checkLogin(){
+            if(window.okhttp){
+                window.okhttp.checkLogged();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+
+
+        // 데이터베이스에서 데이터 불러오기
+        function recommendData(dataArray) {
+            //현재 시간
+            var currentDate=new Date();
+
+            var currentTime=new Date();
+            var offset=currentTime.getTimezoneOffset()/60;
+
+            var adjustedTime = new Date(currentTime.getTime());
+            adjustedTime.setHours(adjustedTime.getHours()+offset+9);
+
+            //오픈 시간 변환
+            var openString=dataArray[4];
+            var opentime=new Date(currentDate.toDateString() + ' ' + openString);
+
+            //마감 시간 변환
+            var closeString=dataArray[5];
+            var closetime=new Date(currentDate.toDateString() + ' ' + closeString);
+
+            //시간 비교
+            if(opentime <= adjustedTime && adjustedTime<= closetime){
+
+                //무료여부
+                if(receivedIsChecked=='true'){
+                    if(dataArray[3]!==0){
+                        return;
+                    }
+                    markerArray.push(dataArray);
+                }
+                else if(receivedIsChecked=='false'){
+                    markerArray.push(dataArray);
+                }
+            }else if(opentime > currentDate || closetime < currentDate){
+                return;
+            }
+
+            console.log("markerArray"+markerArray);
+
+        }
+
+
+
+        //반경 50km 구하기 위한 공식
+        // Haversine 공식을 사용하여 두 지점 간의 거리 계산
+        function getRadius(lat1, lon1, lat2, lon2) {
+            var R = 6371; // 지구의 반지름 (단위: km)
+            var dLat = deg2rad(lat2 - lat1);
+            var dLon = deg2rad(lon2 - lon1);
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            var distance = R * c;
+            return distance;
+        }
+
+        // 각도를 라디안으로 변환
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+
+
+
+        // 경로 그리기
+        function makePolyline(startLat,startLng,goalLat,goalLng,map){
+            console.log("makepolyline 호출됐습니다.");
+            const start=startLng.toString() + "," + startLat.toString();
+        	const goal=goalLng.toString()+","+goalLat.toString();
+        	const url="https://apis-navi.kakaomobility.com/v1/directions?origin="+start+"&destination="+goal;
+			const key="b4be0561706e158b50c10daa6a7dcfde";
+		    const headers={
+			    "Authorization": "KakaoAK"+" "+key
+			};
+
+
+			var polylinePath=[];
+
+        	fetch(url,{
+        		method: "GET",
+        		headers: headers
+        	})
+        	    .then(response => response.json())
+        		.then(data=>{
+        		    console.log(JSON.stringify(data));
+
+        			const roads = data.routes[0].sections[0].roads;
+                    for (const road of roads) {
+                        const vertexes = road.vertexes;
+                        for (let i = 0; i < vertexes.length; i += 2) {
+                            const lng = vertexes[i];
+                            const lat = vertexes[i + 1];
+                            polylinePath.push(new naver.maps.LatLng(lat, lng));
+                        }
+                    }
+
+        		    const polyline=new naver.maps.Polyline({
+        				 path: polylinePath,
+        				 strokeColor: "#FF0000",
+                         strokeWeight: 5,
+        				 map: map
+        			});
+        			polylines.push(polyline);
+        		})
+        		.catch(error=>{
+        			console.log(error);
+        			// 경로가 정상적으로 요청되지 않은 경우, start와 goal 사이에 간단한 직선 경로 그리기
+                        polylinePath.push(new naver.maps.LatLng(startLat, startLng));
+                        polylinePath.push(new naver.maps.LatLng(goalLat, goalLng));
+
+                        const polyline = new naver.maps.Polyline({
+                            path: polylinePath,
+                            strokeColor: "#FF0000",
+                            strokeWeight: 5,
+                            map: map
+                        });
+        		});
+        }
+
+
+
+
+        // 최소거리 구하기
+        function getMindistance(lng,lat,longitude,latitude,minDistance,closestPoint,promises,markerInfo){
+                const start = lng.toString() + "," + lat.toString();
+                const goal = longitude.toString() + "," + latitude.toString();
+                const url="https://apis-navi.kakaomobility.com/v1/directions?origin="+start+"&destination="+goal;
+			    const key="b4be0561706e158b50c10daa6a7dcfde";
+			    const headers={
+				    "Authorization": "KakaoAK"+" "+key
+			    };
+
+             promises.push(
+        	    fetch(url,{
+        		    method: "GET",
+        		    headers: headers
+        	    })
+        		.then(response => response.json())
+        		.then(data=>{
+        			console.log(JSON.stringify(data));
+                    dist=data.routes[0].sections[0].distance;
+                    console.log("dist: "+dist);
+                    dura=data.routes[0].sections[0].duration;
+                    console.log("dura: "+dura);
+
+                    if(dist<minDistance){
+                        return {
+                            latitude: latitude,
+                            longitude: longitude,
+                            distance: dist,
+                            duration: dura,
+                            markerInfo: markerInfo
+                        };
+                    } else{
+                        return null
+                    }
+        		})
+        		.catch(error=>{
+        			console.log(error);
+        		})
+             );
+        }
+
+
+        // 걸리는 시간 구하기
+        function getTime(lng,lat,longitude,latitude,promises){
+            const start = lng.toString() + "," + lat.toString();
+            const goal = longitude.toString() + "," + latitude.toString();
+            const url="https://apis-navi.kakaomobility.com/v1/directions?origin="+start+"&destination="+goal;
+            const key="b4be0561706e158b50c10daa6a7dcfde";
+            const headers={
+                "Authorization": "KakaoAK"+" "+key
+            };
+
+             return fetch(url,{
+                    method: "GET",
+                    headers: headers
+                })
+                .then(response => response.json())
+                .then(data=>{
+                    console.log(JSON.stringify(data));
+                    dura=data.routes[0].sections[0].duration;
+                    console.log("dura: "+dura);
+
+                    return dura;
+                })
+                .catch(error=>{
+                    console.error("Error in getTime():", error);
+                    return undefined;  // 여기서 명시적으로 undefined 반환
+                });
+        }
+
+
+        // 걸리는 거리 구하기
+        function getDist(lng,lat,longitude,latitude,promises){
+            const start = lng.toString() + "," + lat.toString();
+            const goal = longitude.toString() + "," + latitude.toString();
+            const url="https://apis-navi.kakaomobility.com/v1/directions?origin="+start+"&destination="+goal;
+            const key="b4be0561706e158b50c10daa6a7dcfde";
+            const headers={
+                "Authorization": "KakaoAK"+" "+key
+            };
+
+             return fetch(url,{
+                    method: "GET",
+                    headers: headers
+                })
+                .then(response => response.json())
+                .then(data=>{
+                    console.log(JSON.stringify(data));
+                    dist=data.routes[0].sections[0].distance;
+                    console.log("dist: "+dist);
+
+                    return dist;
+                })
+                .catch(error=>{
+                    console.error("Error in getTime():", error);
+                    return undefined;  // 여기서 명시적으로 undefined 반환
+                });
+        }
+
+
+
+
+        // 마감시간 임박한 문화재 아이콘 변경
+        function changeIcon(marker, travelTime, currentTime) {
+            //한국 시간대
+            var offset=currentTime.getTimezoneOffset()/60;
+            var adjustedTime = new Date(currentTime.getTime());
+            adjustedTime.setHours(adjustedTime.getHours()+offset+9);
+
+            var deadline = new Date(adjustedTime.getTime() + (travelTime + 2 * 60 * 60 * 1000)); // 현재 시간 + 이동 시간 + 2시간
+            console.log("currentTime:"+adjustedTime);
+            var closeTime = marker[5];
+            var closeTimeDate = new Date(adjustedTime.toDateString() + ' ' + closeTime);
+            console.log("deadline:"+deadline);
+            console.log("closeTimeDate:"+closeTimeDate);
+
+            if (deadline > closeTimeDate) {
+                // 아이콘 변경하기
+                marker[9].setIcon({
+                    url: 'file:///android_asset/icons/redmarker.png', // 원하는 이미지로 변경하세요!
+                    size: new naver.maps.Size(40, 40),
+                    origin: new naver.maps.Point(0, 0),
+                    anchor: new naver.maps.Point(20, 35)
+                });
+
+                redMarkers.push({
+                    markerInfo: marker,
+                    travelTime: travelTime
+                });
+
+                console.log(marker[0]+" 은 임박한 문화재");
+
+                return 1;
+            } else {
+                marker[9].setIcon(null);
+
+                console.log(marker[0]+" 은 괜찮은 문화재");
+
+                return 0;
+            }
+        }
+
+
+
+        // 마감시간 임박한 문화재 있을 시 알림창 표시
+        function showAlert(checkDeadline) {
+            var popup = document.getElementById("popup");
+            var changeButton = document.getElementById("changeButton");
+            var cancelButton = document.getElementById("cancelButton");
+            document.getElementById('popup').classList.add('slide-in');
+
+            if (checkDeadline) {
+                popup.style.display = "block";
+
+                // 변경 버튼 클릭 시
+                changeButton.onclick = function () {
+                    chooseChange();
+                };
+
+                // 유지 버튼 클릭 시
+                cancelButton.onclick = function () {
+                    popup.style.display = "none";
+                    pathGuide();
+                };
+            }else{
+                setTimeout(pathGuide, 1500);
+            }
+        }
+
+
+
+        // 변경 버튼 클릭 시 동작하는 함수
+        function chooseChange() {
+            // <p> 태그의 내용 변경
+            var alertMsg = document.getElementById("alertMsg");
+            alertMsg.textContent = "경로를 직접 변경하시겠습니까? 자동 변경하시겠습니까?";
+
+            // 기존 버튼 삭제
+            var changeButton = document.getElementById("changeButton");
+            var cancelButton = document.getElementById("cancelButton");
+            changeButton.parentNode.removeChild(changeButton);
+            cancelButton.parentNode.removeChild(cancelButton);
+
+            // 새로운 버튼 생성
+            var deleteButton = document.createElement("button");
+            deleteButton.textContent = "수동";
+            deleteButton.id = "deleteButton";
+
+            var adjustButton = document.createElement("button");
+            adjustButton.textContent = "자동";
+            adjustButton.id = "adjustButton";
+
+            // 버튼을 추가할 부모 요소 가져오기
+            var popupContent = document.querySelector(".popup-content");
+
+            // 새로운 버튼 추가
+            popupContent.appendChild(deleteButton);
+            popupContent.appendChild(adjustButton);
+
+            // 새로운 버튼에 클릭 이벤트 추가
+            deleteButton.onclick = function () {
+                // 삭제 버튼 클릭 시 할 작업
+                chooseDelete();
+                // 여기에 삭제 버튼을 클릭했을 때 할 동작 추가
+                // 예를 들어, 문화재를 삭제하는 코드를 추가할 수 있습니다.
+            };
+
+            adjustButton.onclick = function () {
+                chooseAdjust();
+                popup.style.display = "none";
+            };
+        }
+
+
+        // 수동 변경 버튼 클릭 시 동작하는 함수
+        function chooseDelete(){
+            //<p> 태그 내용 변경
+            var alertMsg = document.getElementById("alertMsg");
+            alertMsg.textContent = "변경을 완료하셨습니까?";
+
+            // 기존 버튼 삭제
+            var deleteButton = document.getElementById("deleteButton");
+            var adjustButton = document.getElementById("adjustButton");
+            deleteButton.parentNode.removeChild(deleteButton);
+            adjustButton.parentNode.removeChild(adjustButton);
+
+            // 새로운 버튼 생성
+            var completeButton = document.createElement("button");
+            completeButton.textContent = "완료";
+            completeButton.id = "completeButton";
+
+            // 버튼을 추가할 부모 요소 가져오기
+            var popupContent = document.querySelector(".popup-content");
+
+            // 새로운 버튼 추가
+            popupContent.appendChild(completeButton);
+
+            completeButton.onclick = function () {
+                isDeleteMode = false;
+                popup.style.display = "none";
+                pathGuide();
+            };
+
+            isDeleteMode = true;
+        }
+
+
+
+        // 자동 변경 버튼 클릭 시 동작하는 함수
+        function chooseAdjust(){
+            var lati = curLat;
+            var lngi = curLng;
+            var currentTime = new Date();
+            var count = 0;
+
+            polylines.forEach(function(polyline) {
+                polyline.setMap(null);
+            });
+
+            overlays.forEach(function(overlay) {
+                overlay.setMap(null);
+            });
+
+            polylines = [];
+            overlays = [];
+            console.log("길이"+redMarkers.length);
+            var redLength=redMarkers.length;
+
+            for(var i=0; i<redLength; i++){
+                console.log("redmarker 반복문 호출");
+                var redMarker = redMarkers[i].markerInfo;
+                console.log("redmarkerinfo: "+ redMarker);
+                var travelTime = redMarkers[i].travelTime;
+                labelArray=[];
+
+                if(changeIcon(redMarker, travelTime, currentTime)==0){
+                    labelArray.push(redMarker[0]);
+                    makePolyline(lati, lngi, redMarker[1], redMarker[2], map);
+                    count += 1;
+
+                    lati = redMarker[1];
+                    lngi = redMarker[2];
+                }else{
+                    redMarker[9].setIcon(null);
+                }
+
+                for(var j=0; j<sortedMarkers.length;j++){
+                    var compareMarker = sortedMarkers[j].markerInfo;
+                    if(compareMarker[0]==redMarker[0]){
+                        console.log("sortedMarkerinfo: " + sortedMarkers[j].markerInfo);
+                        sortedMarkers.splice(j,1);
+                        console.log("sortedMarkerinfo: " + sortedMarkers[j].markerInfo);
+                        break;
+                    }
+                }
+            }
+
+            if(count < 4) {
+                for(var i=count; i<sortedMarkers.length; i++){
+                    console.log("originmarker 반복문 호출");
+                    var originMarker = sortedMarkers[i].markerInfo;
+                    var travelTime = sortedMarkers[i].travelTime;
+
+                    if(changeIcon(originMarker, travelTime, currentTime)==0){
+                        labelArray.push(originMarker[0]);
+                        makePolyline(lati, lngi, originMarker[1], originMarker[2], map);
+                        count+=1;
+
+                        lati = originMarker[1];
+                        lngi = originMarker[2];
+                    }else{
+                        console.log("원래 아이콘 돌리기");
+                        originMarker[9].setIcon(null);
+                    }
+
+                    if(count==4){
+                        break;
+                    }
+                }
+            }
+
+            pathGuide();
+        }
+
+        // 오버레이(라벨링) 만들기
+        function makeOverlay(num,label,lat,lng,map){
+            console.log("makeOverlay 호출됐습니다.");
+            var num_str=num.toString();
+            var CustomOverlay =function(options){
+                this._element = document.createElement('div');
+                this._element.innerHTML='<b>'+num_str+': '+label+'</b>';
+                this.setPosition(options.position);
+                this.setMap(options.map || null);
+            };
+
+            CustomOverlay.prototype=new naver.maps.OverlayView();
+            CustomOverlay.prototype.constructor=CustomOverlay;
+
+            CustomOverlay.prototype.setPosition = function(position) {
+                this._position = position;
+                this.draw();
+            };
+
+            CustomOverlay.prototype.getPosition = function() {
+                return this._position;
+            };
+
+            CustomOverlay.prototype.onAdd = function() {
+                var overlayLayer = this.getPanes().overlayLayer;
+
+                //styles
+                this._element.style.backgroundColor = 'white';
+				this._element.style.border = '1px solid black';
+				this._element.style.padding = '2px';
+				this._element.style.borderRadius = '5px';
+				this._element.style.fontSize = '10px';
+
+                overlayLayer.appendChild(this._element);
+            };
+
+            CustomOverlay.prototype.draw = function() {
+                if (!this.getMap()) {
+                    return;
+                }
+
+                var projection = this.getProjection(),
+                    position = this.getPosition(),
+                    pixelPosition = projection.fromCoordToOffset(position);
+
+                var offsetX=-30;
+                var offsetY=-50;
+
+                this._element.style.position='absolute';
+                this._element.style.left = pixelPosition.x + offsetX + 'px';
+                this._element.style.top = pixelPosition.y + offsetY+ 'px';
+                this._element.style.writingMode = 'horizontal-tb !important';
+            };
+
+            CustomOverlay.prototype.onRemove = function() {
+                var overlayLayer = this.getPanes().overlayLayer;
+
+                this._element.remove();
+            };
+
+            var position=new naver.maps.LatLng(lat,lng);
+            var overlay=new CustomOverlay({
+                map: map,
+                position: position
+            });
+            overlays.push(overlay);
+
+        }
+
+
+
+        // 경로 상의 마커 여부 확인
+        function isMarkerVisited(markerInfo, visitedMarkers) {
+            for (let visitedMarker of visitedMarkers) {
+                if (markerInfo[0] === visitedMarker[0]) {
+                    return true; // 이미 방문한 경우 true 반환
+                }
+            }
+
+            return false;
+        }
+
+
+
+        // 비동기, 최소거리의 마커 찾기
+        async function findClosestPoint(preLat, preLng, visitedMarkers) {
+            var minDistance=Infinity;       //최소거리
+            var closestPoint={latitude:undefined,longitude:undefined}; //최소거리에 해당하는 위도,경도
+            var promises=[];
+
+            for(i=0;i<markersWithinRadius.length;i++){
+                let markerInfo = markersWithinRadius[i];
+                let latitude = markerInfo[1];
+                let longitude = markerInfo[2];
+
+                if (latitude == preLat || isMarkerVisited(markerInfo, visitedMarkers)) {
+                    continue;
+                }
+
+                promises.push(getMindistance(preLng,preLat,longitude,latitude,minDistance,closestPoint,promises,markerInfo));
+            }
+
+            const results = await Promise.all(promises);
+
+            // 결과를 처리하고 가장 가까운 지점을 선택
+            results.forEach(result => {
+                if (result && result.distance < minDistance) {
+                    minDistance = result.distance;
+                    closestPoint = {
+                        latitude: result.latitude,
+                        longitude: result.longitude,
+                        duration: result.duration,
+                        markerInfo: result.markerInfo
+                    };
+                }
+            });
+
+            console.log("마커인포"+closestPoint.markerInfo);
+
+            //거리-인기순의 조회수 높은 마커 선택
+            if(receivedPathClick == 'distFirst'){
+                let highViewCountMarker = closestPoint
+                results.forEach(result => {
+                    if(result && Math.abs(minDistance - result.distance) <= 5000){
+                        if(!highViewCountMarker || highViewCountMarker.markerInfo[6] < result.markerInfo[6]){
+                            console.log("조회수 높은애의 마커인포"+highViewCountMarker.markerInfo);
+                            console.log("조회수 위의 친구를 위로 올리는 중");
+                            highViewCountMarker = {
+                                latitude: result.latitude,
+                                longitude: result.longitude,
+                                duration: result.duration,
+                                markerInfo: result.markerInfo
+                            };
+                        }
+                    }
+                });
+
+                if(highViewCountMarker){
+                    closestPoint = highViewCountMarker;
+                }
+            }
+
+
+
+            console.log("minDistance:"+ minDistance);
+            console.log("result lati:"+ closestPoint.latitude);
+            return closestPoint;
+        }
+
+
+        // 비동기, 거리순 시작할 때 호출되는 함수
+        async function processClosestPoints(lat ,lng) {
+           var closestPoints = [];
+           labelArray = [];
+           var checkDeadline = 0;
+           var travelTime = 0;
+           var currentTime = new Date();
+           var visitedMarkers=[];
+           sortedMarkers=[];
+           document.getElementById('loadingModal').style.display = 'block';
+
+           for(let i=0; i<markersWithinRadius.length; i++) {
+               let closestPoint = await findClosestPoint(lat ,lng, visitedMarkers);
+
+                if (closestPoint) {
+                   closestPoints.push({
+                       latitude: closestPoint.latitude,
+                       longitude: closestPoint.longitude,
+                       duration: closestPoint.duration,
+                       markerInfo:closestPoint.markerInfo
+                   });
+                }
+
+
+
+               let point = closestPoints[i];
+
+               travelTime += point.duration;
+               if(i<4){
+                   checkDeadline += changeIcon(point.markerInfo, travelTime, currentTime);
+
+                   labelArray.push(point.markerInfo[0]);
+
+                   console.log("closestLatitude: " + point.latitude);
+                   console.log("closestLongitude: " + point.longitude);
+
+                   makePolyline(lat ,lng ,point.latitude ,point.longitude,map);
+               }
+
+
+               lat = point.latitude;
+               lng = point.longitude;
+
+               visitedMarkers.push(point.markerInfo);
+               sortedMarkers.push({
+                    markerInfo: point.markerInfo,
+                    travelTime: travelTime
+               });
+               if(i==markersWithinRadius.length-1){
+                    document.getElementById('loadingModal').style.display = 'none';
+                    showAlert(checkDeadline);
+               }
+
+           }
+
+           console.log("labelArray: "+labelArray);
+           console.log("visitedMarker: "+visitedMarkers);
+           for(let i = 0; i < sortedMarkers.length; i++) {
+                console.log("sortedMarkerinfo: " + sortedMarkers[i].markerInfo);
+                console.log("sortedMarkertime: " + sortedMarkers[i].travelTime);
+           }
+
+        }
+
+
+
+        //비동기 인기순
+        async function processPopularMarkers(markers, lat, lng){
+
+            var checkDeadline = 0;
+            var travelTime = 0;
+            var currentTime= new Date();
+            var promises =[];
+
+            for(let i=0; i<markers.length; i++){
+                let marker = markers[i];
+                var latitude = marker[1];
+                var longitude = marker[2];
+                var forLat = lat;
+                var forLng = lng;
+
+                promises.push(getTime(forLng,forLat,longitude,latitude,promises));
+                forLat = latitude;
+                forLng = longitude;
+            }
+
+            const durations = await Promise.all(promises);
+            console.log("duraArray:" + durations);
+            for(let i=0; i<durations.length; i++){
+                var duration = durations[i];
+                console.log("duration: "+ duration);
+                travelTime += duration;
+                console.log("travelTime: "+ travelTime);
+                let tempMarker = markers[i];
+                var label = tempMarker[0];
+                var latitude = tempMarker[1];
+                var longitude = tempMarker[2];
+
+                if(i<4){
+                    checkDeadline += changeIcon(tempMarker, travelTime, currentTime);
+                    labelArray.push(label);
+                    makePolyline(lat,lng,latitude,longitude,map);
+                }
+
+                lat = latitude;
+                lng = longitude;
+                sortedMarkers.push({
+                    markerInfo: tempMarker,
+                    travelTime: travelTime
+                });
+                if(i==durations.length-1){
+                    document.getElementById('loadingModal').style.display = 'none';
+                    showAlert(checkDeadline);
+                }
+            }
+
+            console.log("labelArray: "+labelArray);
+            for(let i = 0; i < sortedMarkers.length; i++) {
+                console.log("sortedMarkerinfo: " + sortedMarkers[i].markerInfo);
+                console.log("sortedMarkertime: " + sortedMarkers[i].travelTime);
+            }
+        }
+
+        //비동기 마커 간의 거리 구하고 조회수-거리 정렬하기
+        async function distAndViewSort(markers,lat,lng){
+            var promises =[];
+            var distAddMarker = markers.slice();
+
+            for(let i=0; i<distAddMarker.length; i++){
+                let marker = distAddMarker[i];
+                var latitude = marker[1];
+                var longitude = marker[2];
+
+                promises.push(getDist(lng,lat,longitude,latitude));
+            }
+
+            var distances = await Promise.all(promises);
+
+            for (var i=0; i< distAddMarker.length; i++){
+                distAddMarker[i].push(distances[i]);
+            }
+
+            // 정렬
+            distAddMarker.sort(function(a,b){
+                return b[6]-a[6];
+            });
+            console.log("dstMarkFirst: "+distAddMarker);
+
+            distAddMarker.sort(function(a,b){
+                if(Math.abs(b[6]-a[6])<=10){
+                    return a[a.length-1]-b[b.length-1];
+                }
+                return b[6]-a[6];
+            });
+            console.log("dstMarkSecond: "+distAddMarker);
+
+
+            var newMarkers = distAddMarker.map(marker => {
+              marker.pop();
+              return marker;
+            });
+
+            return newMarkers;
+        }
+
+
+        //비동기 정렬한 마커들 배열에 넣기
+        async function processPpDistMarkers(markers,lat,lng){
+                document.getElementById('loadingModal').style.display = 'block';
+                var popularMarkers=[];
+                var remainingMarkers = markers.slice();
+                var forLat = lat;
+                var forLng = lng;
+
+                while (remainingMarkers.length > 0){
+                    let sortpushMarkers = await distAndViewSort(remainingMarkers,forLat,forLng);
+
+                    let selectedMarker = sortpushMarkers.shift();
+                    popularMarkers.push(selectedMarker);
+
+                    forLat = selectedMarker[1];
+                    forLng = selectedMarker[2];
+
+                    remainingMarkers = sortpushMarkers;
+                }
+
+                console.log("pofirst: "+popularMarkers);
+                processPopularMarkers(popularMarkers,lat,lng);
+
+        }
+
+
+
+        // 경로에서 마커 제거
+        function deleteMarker(marker){
+            var lati = curLat;
+            var lngi = curLng;
+
+            marker[9].setIcon(null);
+
+            polylines.forEach(function(polyline) {
+                polyline.setMap(null);
+            });
+
+            overlays.forEach(function(overlay) {
+                overlay.setMap(null);
+            });
+
+            polylines = [];
+            overlays = [];
+
+            for(var i=0; i<sortedMarkers.length;i++){
+                var compareMarker = sortedMarkers[i].markerInfo;
+                if(compareMarker[0]==marker[0]){
+                    sortedMarkers.splice(i,1);
+                    console.log("sortedMarkerinfo: " + sortedMarkers[i].markerInfo);
+                    break;
+                }
+            }
+
+            for(var i=0; i<4; i++){
+                var currentTime= new Date();
+                var updateMarker = sortedMarkers[i].markerInfo;
+                var travelTime = sortedMarkers[i].travelTime;
+                labelArray=[];
+
+                changeIcon(updateMarker, travelTime, currentTime);
+                labelArray.push(updateMarker[0]);
+                makePolyline(lati, lngi, updateMarker[1], updateMarker[2], map);
+                makeOverlay(i+1, updateMarker[0], updateMarker[1], updateMarker[2], map);
+
+                lati= updateMarker[1];
+                lngi= updateMarker[2];
+            }
+        }
+
+        // 마커 문화재명 창 띄우기
+        function showSlideInfo(name, addr, img) {
+            var slideInfoContainer = document.getElementById('slide-info-container');
+            slideInfoContainer.style.display='block';
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            slideGuideContainer.style.display='none';
+
+            slideInfoContainer.innerHTML = `
+                <div class="slide-info">
+                    <div class="image-container">
+                        <img src='${img}'>
+                    </div>
+                    <div class="text-container">
+                        <h2>${name}</h2>
+                        <p class="address">${addr}</p>
+                    </div>
+                </div>
+            `;
+
+            var images = document.querySelectorAll('.slide-info img');
+            images.forEach(function(image) {
+                image.onload = function() {
+                    image.style.width = '85px';
+                    image.style.height = '85px';
+                }
+            });
+
+            slideInfoContainer.style.transform = 'translateY(0)';
+        }
+
+        function hideSlideInfo() {
+            var slideInfoContainer = document.getElementById('slide-info-container');
+            slideInfoContainer.style.transform = 'translateY(100%)';
+        }
+
+
+        // 터치 좌표로 슬라이드 당기기
+        document.addEventListener('DOMContentLoaded', function() {
+            var slideInfoContainer = document.getElementById('slide-info-container');
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            var touchStartY;
+
+            document.addEventListener('touchstart', function(e) {
+                touchStartY = e.touches[0].clientY;
+
+
+                e.stopPropagation();
+            });
+
+            // 터치가 끝났을 때 슬라이드 정보창을 닫습니다.
+            document.addEventListener('touchend', function(e) {
+                var touchEndY = e.changedTouches[0].clientY;
+                var touchYDiff = touchStartY - touchEndY;
+
+                if (touchYDiff <  -50 && touchStartY > slideInfoContainer.offsetTop) {
+                    slideInfoContainer.style.transform = 'translateY(100%)';
+                }
+
+                // 이벤트 전파 중단
+                e.stopPropagation();
+            });
+        });
+
+        function downGuide(){
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            slideGuideContainer.style.transform = 'translateY(77%)';
+
+            // 화살표 버튼 숨기기/나타내기
+            document.getElementById('up-btn').style.display = 'block';
+            document.getElementById('down-btn').style.display = 'none';
+        }
+
+        function upGuide(){
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            slideGuideContainer.style.transform = 'translateY(0)';
+
+            // 화살표 버튼 숨기기/나타내기
+            document.getElementById('up-btn').style.display = 'none';
+            document.getElementById('down-btn').style.display = 'block';
+        }
+
+
+        //경로 가이드
+        function guideBetweenMarkers(startLat,startLng,goalLat,goalLng){
+            console.log("guideBetweenMarkers Call");
+            const start=startLng.toString() + "," + startLat.toString();
+        	const goal=goalLng.toString()+","+goalLat.toString();
+        	const url="https://apis-navi.kakaomobility.com/v1/directions?origin="+start+"&destination="+goal;
+			const key="b4be0561706e158b50c10daa6a7dcfde";
+		    const headers={
+			    "Authorization": "KakaoAK"+" "+key
+			};
+
+            return new Promise((resolve, reject) => {
+                var guideArray=[];
+                fetch(url,{
+                    method: "GET",
+                    headers: headers
+                })
+                .then(response=>response.json())
+                .then(data=>{
+                  console.log(JSON.stringify(data));
+                  const guides = data.routes[0].sections[0].guides;
+                  for(const guide of guides){
+                    var guideInfo = {
+                        name: guide.name,
+                        distance: guide.distance,
+                        guidance: guide.guidance
+                    };
+                    guideArray.push(guideInfo);
+                  }
+                  resolve(guideArray);
+                })
+                .catch(error=>{
+                   console.error("Error in guideBetweenMarkers():",error);
+                   reject(error);
+                });
+            });
+        }
+
+        // 경로 가이드 창
+        function pathGuide(){
+            console.log("pathGuide call");
+            var latitude=curLat;
+            var longitude=curLng;
+            var pathMarker1 = sortedMarkers[0].markerInfo;
+            var pathMarker2 = sortedMarkers[1].markerInfo;
+            var pathMarker3 = sortedMarkers[2].markerInfo;
+            var pathMarker4 = sortedMarkers[3].markerInfo;
+            isPathGuide = true;
+
+            var slideInfoContainer = document.getElementById('slide-info-container');
+            slideInfoContainer.style.display='none';
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            slideGuideContainer.style.display='block';
+            slideGuideContainer.innerHTML = `
+                <div class="arrow-container">
+                    <button id="down-btn" class="arrow-btn" onclick="downGuide()">↓</button>
+                    <button id="up-btn" class="arrow-btn" onclick="upGuide()" style="display:none;">↑</button>
+                </div>
+                <div class="button-container">
+                    <div class="button-item">
+                    <button class="guide-btn" onclick="displayGuide(${latitude},${longitude},${pathMarker1[1]},${pathMarker1[2]})">1</button>
+                    <p>${pathMarker1[0]}</p>
+                </div>
+                <div class="button-item">
+                    <button class="guide-btn" onclick="displayGuide(${pathMarker1[1]},${pathMarker1[2]},${pathMarker2[1]},${pathMarker2[2]})">2</button>
+                    <p>${pathMarker2[0]}</p>
+                </div>
+                <div class="button-item">
+                    <button class="guide-btn" onclick="displayGuide(${pathMarker2[1]},${pathMarker2[2]},${pathMarker3[1]},${pathMarker3[2]})">3</button>
+                    <p>${pathMarker3[0]}</p>
+                </div>
+                <div class="button-item">
+                    <button class="guide-btn no-line" onclick="displayGuide(${pathMarker3[1]},${pathMarker3[2]},${pathMarker4[1]},${pathMarker4[2]})">4</button>
+                    <p>${pathMarker4[0]}</p>
+                </div>
+            </div>
+            <div id="guide-display" class="guide-container">
+            </div>
+            `;
+
+            slideGuideContainer.style.transform = 'translateY(0)';
+        }
+
+
+        //가이드 안내 파트
+        function displayGuide(startLat, startLng, goalLat, goalLng) {
+            guideBetweenMarkers(startLat, startLng, goalLat, goalLng).then(guideArray => {
+                var guideDisplay = document.getElementById('guide-display');
+                guideDisplay.scrollTop=0;
+                guideDisplay.innerHTML = '';
+                for (const guide of guideArray) {
+                    if (guide.name == '출발지') {
+                        continue;
+                    } else {
+                        let iconSrc = 'file:///android_asset/icons/blank.png';
+                        if (guide.guidance.includes('좌회전')) {
+                            iconSrc = 'file:///android_asset/icons/left.png';
+                        } else if (guide.guidance.includes('우회전')) {
+                            iconSrc = 'file:///android_asset/icons/right.png';
+                        } else if (guide.guidance.includes('왼쪽')) {
+                            iconSrc = 'file:///android_asset/icons/st_left.png';
+                        } else if (guide.guidance.includes('12시')) {
+                            iconSrc = 'file:///android_asset/icons/straight.png';
+                        } else if (guide.guidance.includes('오른쪽')) {
+                            iconSrc = 'file:///android_asset/icons/st_right.png';
+                        } else if (guide.guidance.includes('지하차도 진입')) {
+                            iconSrc = 'file:///android_asset/icons/under_road.png';
+                        } else if (guide.guidance.includes('고가도로 진입')) {
+                            iconSrc = 'file:///android_asset/icons/up_road.png';
+                        } else if (guide.guidance.includes('유턴')) {
+                            iconSrc = 'file:///android_asset/icons/uturn.png';
+                        } else if (guide.guidance.includes('목적지')) {
+                            iconSrc = 'file:///android_asset/icons/arrive.png';
+                        }
+
+                        let section = `
+                        <div style="display: flex; aligh-items: center;">
+                            <div>
+                                <img src='${iconSrc}' width='50px' height='50px'>
+                                <p style="text-align: center;"><small>${guide.distance} M</small></p>
+                            </div>
+                            <p style="margin-left: 10px;">${guide.guidance}</p>
+                        </div>`;
+
+                        guideDisplay.innerHTML += section;
+                    }
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+        }
+
+        function goBack(){
+            var slideInfoContainer = document.getElementById('slide-info-container');
+            if(isPathGuide && slideInfoContainer.style.display=='block'){
+                slideInfoContainer.style.display='none';
+                document.getElementById('slide-guide-container').style.display='block';
+                document.getElementById('slide-guide-container').style.transform = 'translateY(0)';
+                document.getElementById('down-btn').style.display='block';
+                document.getElementById('up-btn').style.display='none';
+            }else{
+                window.history.back();
+            }
+        }
+
+        function hideSlideGuide() {
+            var slideGuideContainer = document.getElementById('slide-guide-container');
+            slideGuideContainer.style.transform = 'translateY(80%)';
+        }
+
+
+
+        // 지도 화면 띄우기
+        function mapMake(lat,lng){
+             map = new naver.maps.Map('map', {
+                center: new naver.maps.LatLng(lat,lng),
+                zoom: 12
+            });
+
+            var mymarker = new naver.maps.Marker({
+                position: new naver.maps.LatLng(lat,lng),
+                map: map,
+                icon: {
+                    url: 'file:///android_asset/icons/circle.png',
+                    size: new naver.maps.Size(40,40),
+                    origin: new naver.maps.Point(0,0),
+                    anchor: new naver.maps.Point(20,20)
+                }
+            });
+
+            markersWithinRadius=[];
+            var checkDeadline=0;
+
+
+            for(i=0;i<markerArray.length;i++){
+                var marker=markerArray[i];
+                distance=getRadius(lat,lng,marker[1],marker[2]);
+                if(distance<=50){
+
+                    var markerToAdd=new naver.maps.Marker({
+                        position: new naver.maps.LatLng(marker[1],marker[2]),
+                        map: map,
+                        title: marker[0],
+                        addr: marker[7],
+                        img: marker[8]
+                    });
+
+                    naver.maps.Event.addListener(markerToAdd, 'click', function(e) {
+                        if(isDeleteMode) {
+                            for (var i=0; i<4; i++){
+                                var checkedMarker = sortedMarkers[i].markerInfo;
+                                if( e.overlay.getTitle() == checkedMarker[0]){
+                                    if(confirm("해당 문화재를 경로에서 삭제하시겠습니까?")){
+                                        console.log("삭제 함수 발동");
+                                        deleteMarker(checkedMarker);
+                                    }else{
+                                        console.log("삭제 안함");
+                                    }
+                                }else{
+                                    console.log("경로 상의 마커가 아님");
+                                }
+                            }
+                            console.log("경로에서 현재 클릭된 마커 제거");
+                        } else {
+                            console.log("일반 모드 동작");
+                            showSlideInfo(e.overlay.getTitle(), e.overlay.addr, e.overlay.img);
+                        }
+                    });
+
+                    // 중복된 마커인지 검사
+                    var isDuplicate = false;
+                    for (var j = 0; j < markersWithinRadius.length; j++) {
+                        var existingMarker = markersWithinRadius[j];
+                        if (existingMarker[1] === marker[1] && existingMarker[2] === marker[2]) {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!isDuplicate) {
+                        var markerCopy = marker.slice(); // marker 배열 복사
+                        markerCopy.push(markerToAdd);
+                        markersWithinRadius.push(markerCopy);
+                    }
+                }
+            }
+            console.log("radius 1: "+markersWithinRadius);
+
+            //거리순
+            if (receivedPathClick == 'distOnly') {
+                processClosestPoints(lat ,lng)
+                 .catch(error=>{
+                     console.error(error);
+                 });
+            }
+
+            //거리-인기순
+            else if(receivedPathClick=='distFirst'){
+                processClosestPoints(lat ,lng)
+                 .catch(error=>{
+                     console.error(error);
+                 });
+            }
+
+            //인기순
+            else if(receivedPathClick=='popularOnly'){
+                labelArray=[];
+                sortedMarkers=[];
+                var popularMarkers=[];
+                markersWithinRadius.sort(function(a,b){
+                    return b[6]-a[6];
+                });
+                popularMarkers = markersWithinRadius;
+                console.log("popular: "+popularMarkers);
+
+                processPopularMarkers(popularMarkers,lat,lng);
+
+            }
+
+            //인기-거리순
+            else if(receivedPathClick=='popularFirst'){
+                labelArray=[];
+                sortedMarkers=[];
+                processPpDistMarkers(markersWithinRadius,lat,lng)
+                .catch(error=>{
+                     console.error(error);
+                 });
+            }
+
+        }
+
+        naver.maps.Service.geocode({
+                    address: receivedInputValue
+                }, function(status, response) {
+                    if (status !== naver.maps.Service.Status.OK) {
+                        return alert('Something wrong!');
+                    }
+
+                    var result = response.result;
+                    var items = result.items;
+                    lat=items[0].point.y;
+                    lng=items[0].point.x;
+                    curLat=lat;
+                    curLng=lng;
+                    console.log(lat);
+                    console.log(lng);
+                    mapMake(lat,lng);
+        });
+
+
+
+
+
+</script>
+
+<div id="loadingModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <p>잠시만 기다려주세요. 탐색 중에 있습니다.</p>
     </div>
+</div>
+
+<div id="popup" class="popup">
+    <div class="popup-content">
+        <p id="alertMsg">마감 임박한 문화재가 있습니다. 경로를 변경하시겠습니까?</p>
+        <button id="changeButton">변경</button>
+        <button id="cancelButton">유지</button>
+    </div>
+</div>
+
+<div id="slide-info-container">
+    <!-- 정보가 여기에 나타납니다. -->
+</div>
+<div id="slide-guide-container">
+    <!-- 정보가 여기에 나타납니다. -->
 </div>
 
 <div id="nav-container">
 
     <div id="search" class="nav-item">
         <a href="search.html">
-            <i class="fas fa-search"></i>
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
             <span>검색</span>
         </a>
     </div>
 
     <div id="find" class="nav-item">
         <a href="find.html">
-            <i class="fas fa-find"></i>
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
             <span>탐색</span>
         </a>
     </div>
 
     <div id="camera" class="nav-item">
-        <a href="camera.html">
-            <i class="fas fa-camera"></i>
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
             <span>촬영</span>
         </a>
     </div>
 
     <div id="recommend" class="nav-item">
-        <a href="recommend.html">
-            <i class="fas fa-star"></i>
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
             <span>추천</span>
         </a>
     </div>
 
     <div id="mypage" class="nav-item">
-        <a href="mypage.html">
-            <i class="fas fa-user"></i>
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
             <span>마이페이지</span>
         </a>
     </div>

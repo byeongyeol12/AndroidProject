@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>작성한 리뷰 보기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .header {
+            margin-bottom: 45px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #000;
+            padding: 10px 20px;
+        }
+
+        .page-title {
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .close-button {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .slide-in {
+            animation: slide-in 0.5s ease forwards;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .slide-out {
+            animation: slide-out 0.5s ease forwards;
+        }
+
+        @keyframes slide-out {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(100%);
+            }
+        }
+
+        .review {
+            position: relative;
+            top: 20px;
+        }
+
+        .separator {
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        .edit-button {
+            position: absolute;
+            top: 0;
+            right: 40px;
+            margin: 10px;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="header">
+    <span class="page-title">작성한 리뷰 보기</span>
+    <span class="close-button" onclick="goBack()">x</span>
+</div>
+<div id="review-content"></div>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('slide-in');
+        });
+
+        function goBack() {
+            document.body.classList.remove('slide-in');
+            document.body.classList.add('slide-out');
+            setTimeout(function() {
+                window.history.back();
+            }, 500);
+        }
+
+        window.onload = function(){
+            callShowReviews();
+        }
+
+        function callShowReviews(){
+            //초기화
+            document.getElementById('review-content').innerHTML = '';
+
+            if(window.okhttp){
+                window.okhttp.showReviewsOfUserName();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+        function showReview(content, writer, writeTime, cpName, imagePath){
+            var newReviewElement = document.createElement('div');
+            newReviewElement.classList.add('review');
+
+            var cultureInfoElement = document.createElement('div');
+            cultureInfoElement.classList.add('culture-info');
+            cultureInfoElement.innerHTML = `
+                <h4>${cpName}</h4>
+                <img src="${imagePath}" alt="문화재 이미지" width = "100px" height = "100px";  />
+            `;
+            newReviewElement.appendChild(cultureInfoElement);
+
+            var reviewText = content + "<br> <small>"+ writer+ " (" + writeTime + ") </small>";
+            var reviewTextElement = document.createElement('p');
+            reviewTextElement.innerHTML = reviewText;
+            newReviewElement.appendChild(reviewTextElement);
+
+            // 수정 버튼 추가
+            var editButton = document.createElement('button');
+            editButton.innerText = '수정';
+            editButton.classList.add('edit-button');
+            editButton.addEventListener('click', function() {
+                var editedContent = prompt('리뷰를 수정하세요.', content);
+                if (editedContent !== null) {
+                    callUpdateReview(writeTime,editedContent);
+                    callShowReviews();
+                }
+            });
+            newReviewElement.appendChild(editButton);
+
+            // 삭제 버튼 추가
+            var deleteButton = document.createElement('button');
+            deleteButton.innerText = '삭제';
+            deleteButton.classList.add('delete-button');
+            deleteButton.addEventListener('click', function() {
+                if (confirm('리뷰를 삭제하시겠습니까?')) {
+                    callDeleteReview(writeTime);
+                    callShowReviews();
+                }
+            });
+            newReviewElement.appendChild(deleteButton);
+
+            var reviewContentElement = document.getElementById('review-content');
+            var firstReviewElement = reviewContentElement.querySelector('.review');
+            reviewContentElement.insertBefore(newReviewElement, firstReviewElement);
+
+            // 구분선 생성
+            var separatorElement = document.createElement('div');
+            separatorElement.classList.add('separator');
+            newReviewElement.appendChild(separatorElement);
+        }
+
+        function callUpdateReview(writeTime, content){
+            if(window.okhttp){
+                window.okhttp.updateReview(writeTime, content);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+        function callDeleteReview(writeTime){
+            if(window.okhttp){
+                window.okhttp.deleteReview(writeTime);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+</script>
+</body>
+
+</html>

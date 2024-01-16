@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="3-7.css">
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=okvn2uf3b5&submodules=geocoder"></script>
+    <style>
+
+        #search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 100px;
+        }
+
+        #search-bar input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        #nowloc-button {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        #nowloc-button label {
+            margin-left: 5px;
+        }
+
+        #search-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            flex-direction: column;
+        }
+
+         #path-radiobox {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 100px;
+         }
+
+         #under-radio {
+            margin-top: 20px;
+         }
+
+        #free-checkbox{
+            display: flex;
+            align-items: center;
+            margin-top: 50px;
+            justify-content: center;
+        }
+
+        #confirm-button {
+                margin-top: 40px;
+                display: flex;
+                justify-content: center;
+        }
+
+        #confirm-button button {
+            padding: 10px 20px;
+            background-color: #555;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #confirm-button button:hover {
+            background-color: #333;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div id="search-container">
+    <div id="search-bar">
+        <input type="text" id="loc" placeholder="주소를 입력하세요." />
+    </div>
+</div>
+
+<!-- 현재 위치 체크박스 -->
+<div id="nowloc-button">
+    <button id="nowloc">현재 위치 기반 검색</button>
+</div>
+
+<!-- 경로 방법 라디오 -->
+<div id="path-radiobox">
+    <h3>추천 경로 선택</h3>
+    <div id="up-radio">
+        <input type="radio" name="path_radio" value="distOnly">거리순
+        <input type="radio" name="path_radio" value="distFirst">거리-인기순
+    </div>
+    <div id="under-radio">
+        <input type="radio" name="path_radio" value="popularOnly">인기순
+        <input type="radio" name="path_radio" value="popularFirst">인기-거리순
+    </div>
+</div>
+
+<div id="free-checkbox">
+    <input type="checkbox" id="free" name="free">
+    <label for="free">무료 여부</label>
+</div>
+
+<div id="confirm-button">
+    <button id="confirm">확인</button>
+</div>
+
+<script>
+    var nowLat=0.0;
+    var nowLng=0.0;
+    var addr="";
+
+    function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+    }
+
+    function goBack(){
+            window.history.back();
+    }
+
+    function checkLogin(){
+        if(window.okhttp){
+            window.okhttp.checkLogged();
+        }else{
+            console.log("okhttp interface is not available.");
+        }
+    }
+
+    function nowLocation(latitude,longitude){
+                console.log("latitude: "+latitude);
+                console.log("longitude: "+longitude);
+                nowLat=latitude;
+                nowLng=longitude;
+                console.log("nowLat: "+nowLat);
+                console.log("nowLng: "+nowLng);
+    }
+
+    document.getElementById('nowloc').addEventListener('click',function(){
+        var inputText=document.getElementById('loc');
+        naver.maps.Service.reverseGeocode({
+        location: new naver.maps.LatLng(nowLat, nowLng),
+    }, function(status, response) {
+        if (status !== naver.maps.Service.Status.OK) {
+            return alert('Something wrong!');
+        }
+
+        var result = response.result; // 검색 결과의 컨테이너
+        var items = result.items; // 검색 결과의 배열
+        addr=items[0].address;
+    });
+        console.log("addr: "+addr);
+        inputText.value=addr;
+    });
+
+
+   document.getElementById('confirm').addEventListener('click', function() {
+    // 값을 가져와서 URL 매개변수를 생성하여 다른 HTML 파일로 이동
+    var inputText = document.getElementById('loc').value;
+    var isChecked = document.querySelector('input[type="checkbox"]').checked;  //무료여부
+    var path = "";
+    document.getElementsByName('path_radio').forEach((node) => {
+        if(node.checked) {
+            path = node.value;
+            console.log("path:"+ path);
+        }
+    });
+
+    var url = 'recommend.html' + '?inputValue=' + encodeURIComponent(inputText) + '&isChecked=' + isChecked+ '&pathClick='+path;
+    window.location.href = url;
+
+   });
+
+
+</script>
+
+
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

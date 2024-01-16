@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="3-7.css">
+    <title>마이페이지</title>
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+
+        #mypage2-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+
+        #user-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #user-info h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        #user-info p {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #777;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .button-container button {
+            flex: 0 0 48%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #logout-button {
+            background-color: #dc3545;
+        }
+
+        #delete-button {
+            background-color: #f0ad4e;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="mypage2-container">
+    <div id="user-info">
+        <h1 id="nickname">사용자 닉네임</h1>
+        <p id="username">사용자 이름</p>
+    </div>
+    <div class="button-container">
+        <button id="password-button">비밀번호 변경</button>
+        <button id="nickname-button">닉네임 변경</button>
+        <button id="email-button">이메일 변경</button>
+        <button id="reviews-button">작성한 리뷰 보기</button>
+        <button id="logout-button">로그아웃</button>
+        <button id="delete-button">회원탈퇴</button>
+    </div>
+</div>
+
+<script>
+
+    //촬영 버튼 클릭 시 동작하는 함수
+    function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+    }
+
+    function checkLogin(){
+        if(window.okhttp){
+            window.okhttp.checkLogged();
+        }else{
+            console.log("okhttp interface is not available.");
+        }
+    }
+
+    document.getElementById('password-button').addEventListener('click', function() {
+        window.open('change_password.html', '_blank');
+    });
+
+    document.getElementById('nickname-button').addEventListener('click', function() {
+        window.open('change_nickname.html', '_blank');
+    });
+
+    document.getElementById('email-button').addEventListener('click', function() {
+        window.open('change_email.html', '_blank');
+    });
+
+    document.getElementById('reviews-button').addEventListener('click', function() {
+        window.open('show_reviews.html', '_blank');
+    });
+
+    document.getElementById('logout-button').addEventListener('click', function() {
+        if(window.okhttp){
+            window.okhttp.logOut();
+        }else{
+            console.log("okhttp interface is not available.");
+        }
+    });
+
+    document.getElementById('delete-button').addEventListener('click', function() {
+        window.open('unregister.html', '_blank');
+    });
+
+    if(window.okhttp){
+        window.okhttp.findIdAndNickname();
+    }else{
+        console.log("okhttp interface is not available.");
+    }
+
+    document.querySelector('#mypage a').addEventListener('click', function(event){
+        event.preventDefault();
+
+        if(window.okhttp){
+            window.okhttp.checkLogged();
+        }else{
+            console.log("okhttp interface is not available.");
+        }
+    });
+
+    function goBack(){
+            window.history.back();
+    }
+</script>
+
+
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

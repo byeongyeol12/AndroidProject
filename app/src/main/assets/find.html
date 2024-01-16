@@ -3,109 +3,222 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<script src="index.js"></script>
 	<link rel="stylesheet" href="3-7.css">
 	<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=okvn2uf3b5&submodules=geocoder"></script>
 	<script>
+		var findArray=[];
+		function findData(dataArray){
+			findArray.push(dataArray);
+		}
+
 		function updateMapLocation(latitude, longitude) {
         	var map = new naver.maps.Map('map', {
             	center: new naver.maps.LatLng(latitude, longitude),
-            	zoom: 10
+            	zoom: 12
         	});
 
         	var mymarker = new naver.maps.Marker({
             	position: new naver.maps.LatLng(latitude, longitude),
             	map: map,
             	icon: {
-            		url: 'file:///android_asset/circle.png',
+            		url: 'file:///android_asset/icons/circle.png',
             		size: new naver.maps.Size(40,40),
             		origin: new naver.maps.Point(0,0),
             		anchor: new naver.maps.Point(20,20)
             	}
         	});
 
-        	const start="127.12345,37.12345";
-        	const goal="127.54321,38.12345";
-        	const url="https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start={start}&goal={goal}";
-        	const headers={
-        		"X-NCP-APIGW-API-KEY-ID": "okvn2uf3b5",
-				"X-NCP-APIGW-API-KEY": "SGrEf2z1p1mby1ERttcOUSWBeMNiuHDbPytcavqr",
-        	};
+			markerAdd(map);
 
-        	fetch(url,headers)
-        		.then(response => response.json())
-        		.then(data=>{
-        			console.log(data);
-        		})
-        		.catch(error=>{
-        			console.log(error);
-        		});
+			naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
+				for (var i = 0; i < overlays.length; i++) {
+					if (zoom < 14) {
+						overlays[i].hide();
+					} else {
+						overlays[i].show();
+					}
+				}
+			});
 
-
-
-			/*
-				var infoContainer= document.getElementById('info-container');
-				var backBtn=document.getElementById('back');
-
-        		naver.maps.Event.addListener(marker,'click',function(){
-        			var info=document.getElementById('info');
-        			info.innerHTML='<object type="text/html" data="test.html"></object>';
-        			infoContainer.classList.add('expanded');
-        			backBtn.onclick=function(){
-        				infoContainer.classList.remove('expanded');
-        			};
-        		});
-        	*/
-			map.setCenter(new naver.maps.LatLng(37.541, 126.986));
-			mymarker.setPosition(new naver.maps.LatLng(37.541, 126.986));
-
+			var zoom = map.getZoom();
+			for (var i = 0; i < overlays.length; i++) {
+				if (zoom < 14) {
+					overlays[i].hide();
+				} else {
+					overlays[i].show();
+				}
+			}
     	}
 
+    	function markerAdd(map){
+    		for(i=0;i<findArray.length;i++){
+    			var marker=findArray[i];
+
+				var markerToAdd=new naver.maps.Marker({
+                        position: new naver.maps.LatLng(marker[1],marker[2]),
+                        map: map,
+                        title: marker[0]
+                });
+                makeMarkerLabel(marker[0],marker[1],marker[2],map);
+
+				naver.maps.Event.addListener(markerToAdd, 'click', function(e) {
+					window.location.href = 'info.html?cpName='+e.overlay.getTitle();
+				});
+    		}
+    	}
+
+    	var overlay;
+    	var overlays=[];
+
+    	function makeMarkerLabel(label,lat,lng,map){
+    		var CustomOverlay =function(options){
+                this._element = document.createElement('div');
+                this._element.innerHTML='<b>'+label+'</b>';
+                this.setPosition(options.position);
+                this.setMap(options.map || null);
+            };
+
+            CustomOverlay.prototype=new naver.maps.OverlayView();
+            CustomOverlay.prototype.constructor=CustomOverlay;
+
+            CustomOverlay.prototype.setPosition = function(position) {
+                this._position = position;
+                this.draw();
+            };
+
+            CustomOverlay.prototype.getPosition = function() {
+                return this._position;
+            };
+
+            CustomOverlay.prototype.onAdd = function() {
+                var overlayLayer = this.getPanes().overlayLayer;
+
+                //styles
+                this._element.style.backgroundColor = 'white';
+				this._element.style.border = '1px solid black';
+				this._element.style.padding = '2px';
+				this._element.style.borderRadius = '5px';
+				this._element.style.fontSize = '10px';
+
+                overlayLayer.appendChild(this._element);
+            };
+
+            CustomOverlay.prototype.draw = function() {
+                if (!this.getMap()) {
+                    return;
+                }
+
+                var projection = this.getProjection(),
+                    position = this.getPosition(),
+                    pixelPosition = projection.fromCoordToOffset(position);
+
+                var offsetX=-20;
+                var offsetY=-10;
+
+                this._element.style.position='absolute';
+                this._element.style.left = pixelPosition.x + offsetX + 'px';
+                this._element.style.top = pixelPosition.y + offsetY+ 'px';
+                this._element.style.writingMode = 'initial';
+            };
+
+            CustomOverlay.prototype.onRemove = function() {
+                var overlayLayer = this.getPanes().overlayLayer;
+
+                this._element.remove();
+                this._element.off();
+            };
+
+            CustomOverlay.prototype.hide=function(){
+            	this._element.style.display='none';
+            };
+
+            CustomOverlay.prototype.show=function(){
+            	this._element.style.display='block';
+           	};
+
+            var position=new naver.maps.LatLng(lat,lng);
+            overlay=new CustomOverlay({
+                map: map,
+                position: position
+            });
+            overlays.push(overlay);
+    	}
+
+
+		function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+        }
+
+        function checkLogin(){
+			if(window.okhttp){
+				window.okhttp.checkLogged();
+			}else{
+				console.log("okhttp interface is not available.");
+			}
+		}
+
+		function goBack(){
+            window.history.back();
+        }
 	</script>
 </head>
 
 <body>
 <div id="container">
 	<div id="map"></div>
-	<div id="info-container">
-		<div><button id="back"></button></div>
-		<div id="info"></div>
-	</div>
 </div>
 
 <div id="nav-container">
 
 	<div id="search" class="nav-item">
 		<a href="search.html">
-			<i class="fas fa-search"></i>
+			<i class="fas fa-search">
+				<img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+			</i>
 			<span>검색</span>
 		</a>
 	</div>
 
 	<div id="find" class="nav-item">
 		<a href="find.html">
-			<i class="fas fa-find"></i>
+			<i class="fas fa-find">
+				<img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+			</i>
 			<span>탐색</span>
 		</a>
 	</div>
 
 	<div id="camera" class="nav-item">
-		<a href="camera.html">
-			<i class="fas fa-camera"></i>
+		<a href="#" onclick="callActivity()">
+			<i class="fas fa-camera">
+				<img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+			</i>
 			<span>촬영</span>
 		</a>
 	</div>
 
 	<div id="recommend" class="nav-item">
-		<a href="recommend.html">
-			<i class="fas fa-star"></i>
+		<a href="recommend_main.html">
+			<i class="fas fa-star">
+				<img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+			</i>
 			<span>추천</span>
 		</a>
 	</div>
 
 	<div id="mypage" class="nav-item">
-		<a href="mypage.html">
-			<i class="fas fa-user"></i>
+		<a href="#" onclick="checkLogin()">
+			<i class="fas fa-user">
+				<img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+			</i>
 			<span>마이페이지</span>
 		</a>
 	</div>

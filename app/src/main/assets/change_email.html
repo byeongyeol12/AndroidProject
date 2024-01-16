@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 변경</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        input[type="email"] {
+            width: 300px;
+            height: 40px;
+            margin: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        #change-email-button {
+            margin-top: 180px;
+            width: 150px;
+            height: 50px;
+            background-color: #007bff;
+            color: #ffffff;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #change-email-button:hover {
+            background-color: #0056b3;
+        }
+
+        .header {
+            margin-bottom: 45px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #000;
+            padding: 10px 20px;
+        }
+
+        .page-title {
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .page-name {
+            font-size: 24px;
+        }
+
+        .close-button {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .input-label {
+            display: block;
+            text-align: left;
+            margin: 10px 20px;
+        }
+
+        input[type="password"] {
+            width: 300px;
+            height: 40px;
+            margin: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        input[type="password"].current-password {
+            margin-top: 20px;
+        }
+
+        .current-password-label {
+            margin-top: 45px;
+        }
+
+        .slide-in {
+            animation: slide-in 0.5s ease forwards;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .slide-out {
+            animation: slide-out 0.5s ease forwards;
+        }
+
+        @keyframes slide-out {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(100%);
+            }
+        }
+
+
+
+    </style>
+</head>
+
+<body>
+<div class="header">
+    <span class="page-title">이메일 변경</span>
+    <span class="close-button" onclick="goBack()">x</span>
+</div>
+
+<form id="updateemForm">
+    <label for="new-email" class="input-label">변경할 이메일</label>
+    <input type="email" placeholder="이메일" id="new-email"><br>
+    <div style="margin-top: 10px; color: red; text-align: left; margin: 10px 20px;">* 반드시 본인의 이메일을 입력해주세요.</div>
+
+    <label for="current-password" class="input-label current-password-label">현재 비밀번호</label>
+    <input type="password" class="current-password" placeholder="현재 비밀번호" id="current-password"><br>
+
+    <button id="change-email-button">이메일 변경</button>
+</form>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('slide-in');
+        });
+
+        function goBack() {
+            document.body.classList.remove('slide-in');
+            document.body.classList.add('slide-out');
+            setTimeout(function() {
+                window.history.back();
+            }, 500);
+        }
+
+        document.getElementById('updateemForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var new_email = document.getElementById('new-email').value;
+            var password = document.getElementById('current-password').value;
+
+            if(window.okhttp){
+                window.okhttp.updateEmail(new_email,password);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        });
+
+    </script>
+</body>
+
+</html>

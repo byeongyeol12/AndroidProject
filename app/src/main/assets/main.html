@@ -3,45 +3,95 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="index.js"></script>
     <link rel="stylesheet" href="3-7.css">
+    <script>
+        function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+        }
+
+        function checkLogin(){
+            if(window.okhttp){
+                window.okhttp.checkLogged();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+        function goBack(){
+            if(confirm("종료하시겠습니까?")){
+                if(window.android){
+                    console.info("android");
+                    window.android.closeApp();
+                }
+
+                else{
+                    console.info("web");
+                    document.form.submit();
+                }
+            }else{
+                console.log("cancel");
+            }
+        }
+    </script>
 
 </head>
 
 <body>
+<div id="main-content">
+    <img src="file:///android_asset/icons/mainpage.png" alt="main image">
+</div>
+
 <div id="nav-container">
 
     <div id="search" class="nav-item">
         <a href="search.html">
-            <i class="fas fa-search"></i>
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
             <span>검색</span>
         </a>
     </div>
 
     <div id="find" class="nav-item">
         <a href="find.html">
-            <i class="fas fa-find"></i>
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
             <span>탐색</span>
         </a>
     </div>
 
     <div id="camera" class="nav-item">
-        <a href="camera.html">
-            <i class="fas fa-camera"></i>
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
             <span>촬영</span>
         </a>
     </div>
 
     <div id="recommend" class="nav-item">
-        <a href="recommend.html">
-            <i class="fas fa-star"></i>
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
             <span>추천</span>
         </a>
     </div>
 
     <div id="mypage" class="nav-item">
-        <a href="mypage.html">
-            <i class="fas fa-user"></i>
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
             <span>마이페이지</span>
         </a>
     </div>

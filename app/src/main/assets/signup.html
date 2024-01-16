@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="3-7.css">
+    <title>마이페이지</title>
+
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        #signup-container {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        #signup-container h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #signup-container form {
+            width: 80%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        #signup-container label {
+            display: block;
+            text-align: left;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        #signup-container input[type="text"],
+        #signup-container input[type="password"],
+        #signup-container input[type="email"],
+        #signup-container input[type="tel"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #signup-container input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        #signup-container p {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="signup-container">
+    <h1>회원가입</h1>
+    <form id="registerForm">
+        <label for="username">아이디</label>
+        <input type="text" id="username" name="username" required><br>
+
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" name="password" required><br>
+
+        <label for="nickname">닉네임</label>
+        <input type="text" id="nickname" name="nickname" required><br>
+
+        <label for="email">이메일</label>
+        <input type="text" id="email" name="email" required><br>
+
+        <input type="submit" value="가입">
+    </form>
+    <p>이미 계정이 있으신가요? <a href="mypage.html">로그인</a></p>
+</div>
+
+<script>
+
+    //촬영 버튼 클릭 시 동작하는 함수
+    function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+    }
+
+    function goBack(){
+        window.history.back();
+    }
+
+    function checkLogin(){
+        if(window.okhttp){
+            window.okhttp.checkLogged();
+        }else{
+            console.log("okhttp interface is not available.");
+        }
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        var nickname = document.getElementById('nickname').value;
+        var email = document.getElementById('email').value;
+
+
+        //유효성 검사
+        if (!/^[A-Za-z0-9]+$/.test(username)) {
+            alert("아이디 생성시 한글 사용은 불가능합니다.")
+            return;
+        }
+
+        if (username.length < 6 || username.length >= 20) {
+            alert("아이디는 6자 이상 20자 미만이어야 합니다.");
+            return;
+        }
+
+        if (password.length < 8 || password.length >= 20) {
+            alert("비밀번호는 8자 이상 20자 미만이어야 합니다.");
+            return;
+        }
+
+        if (!/^(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+            alert("비밀번호는 영문과 숫자의 혼합이 필요합니다.");
+            return;
+        }
+
+        if (nickname.length >= 10) {
+            alert("닉네임은 10자 미만이어야 합니다.");
+            return;
+        }
+
+        if (!/^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$/.test(email)) {
+            alert("이메일은 '@'를 포함한 올바른 형식이어야 합니다.");
+            return;
+        }
+
+        fetch('http://192.168.12.6/mypage/register.php' , {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'username' : username,
+                'password' : password,
+                'nickname' : nickname,
+                'email' : email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status == 'success'){
+                console.log("signup success");
+                alert(data.message);
+                window.location.href = 'mypage.html';
+            }else if (data.status == 'fail'){
+                console.log("signup fail");
+                alert(data.message);
+                return;
+            }
+        });
+    });
+</script>
+
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

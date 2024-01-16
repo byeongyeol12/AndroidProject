@@ -3,14 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="3-7.css">
     <style>
         body {
-            overflow-y: scroll; /* 세로 스크롤 활성화 */
-            height: 100vh; /* 화면 전체 높이로 설정 */
+            overflow-y: scroll;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        #culture-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .culture-image {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .culture-info {
+            flex: 1;
+            padding: 20px;
+        }
+
+        #description {
+            width: 85%;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #content-selector {
+            margin-top: 10px;
+        }
+
+        #selected-content {
+            width: 85%;
+            margin-top: 20px;
+            margin-bottom: 50px; /* 내용 하단 여백 */
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+
+        .review {
+            position: relative;
+            top: 20px;
+        }
+
+        .separator {
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
     </style>
+    <script>
+         var params = new URLSearchParams(window.location.search);
+         var receivedcpName = params.get('cpName');
+
+         var infoArray=[];
+         function infoData(dataArray){
+            infoArray.push(dataArray);
+         }
+
+         function loadDataAndRender(){
+             const explainContainer = document.getElementById('explain-container');
+             explainContainer.innerHTML = "";
+
+             infoArray.forEach((item,index) =>{
+                if(receivedcpName==item[0]){
+                    var contentDescription = item[3].replace(/\n/g, "<br>");
+                    var contentInformation = item[4].replace(/\n/g, "<br>");
+
+                    const entry= document.createElement('div');
+                    entry.innerHTML=`
+                        <div id="culture-details">
+                            <img class="culture-image" src="${item[2]}" alt="문화재 이미지">
+                            <div class="culture-info">
+                                <h2>${item[0]}</h2>
+                                <p>${item[1]}</p>
+                            </div>
+                        </div>
+
+                        <div id="content-selector">
+                            <label for="content-select">내용 선택:</label>
+                            <select id="content-select" onchange="changeContent()">
+                                <option value="description">문화재 설명</option>
+                                <option value="information">관람정보</option>
+                                <option value="review">리뷰</option>
+                            </select>
+                        </div>
+
+                        <div id="selected-content">
+                            <div id="description-content">
+                                <h2>문화재 설명</h2>
+                                <p>${contentDescription}</p>
+                            </div>
+                            <div id="information-content" style="display: none;">
+                                <h2>관람정보</h2>
+                                <p>${contentInformation}</p>
+                            </div>
+                            <div id="review-content" style="display: none; position: relative;">
+                                <h2>리뷰</h2>
+                                <div style="position: absolute; top: 0; right: 0;">
+                                    <button id="write-review-button" onclick="checkLoginInReview()">글쓰기</button>
+                                </div>
+                                <div id="review-data-container"></div>
+                            </div>
+                        </div>`;
+                    explainContainer.appendChild(entry);
+
+                }
+                else{
+                    console.log('일치하는 이름이 없습니다.');
+                }
+             });
+
+             callTranslate();
+         }
+
+         function changeContent() {
+            const contentSelect = document.getElementById('content-select');
+            const selectedContent = contentSelect.value;
+
+            const descriptionContent = document.getElementById('description-content');
+            const informationContent = document.getElementById('information-content');
+            const reviewContent = document.getElementById('review-content');
+
+            if (selectedContent === 'description') {
+                descriptionContent.style.display = 'block';
+                informationContent.style.display = 'none';
+                reviewContent.style.display = 'none';
+            } else if (selectedContent === 'information') {
+                descriptionContent.style.display = 'none';
+                informationContent.style.display = 'block';
+                reviewContent.style.display = 'none';
+            } else if (selectedContent === 'review') {
+                descriptionContent.style.display = 'none';
+                informationContent.style.display = 'none';
+                reviewContent.style.display = 'block';
+                callShowReviews();
+            }
+         }
+
+         function goBack(){
+            window.history.back();
+         }
+
+         function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+         }
+
+         function checkLogin(){
+            if(window.okhttp){
+                window.okhttp.checkLogged();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+         }
+
+         function increaseViewCount(){
+            if(window.okhttp){
+                window.okhttp.increaseViewCount(receivedcpName);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+         }
+
+         window.onload = function(){
+            increaseViewCount();
+         }
+
+         function checkLoginInReview(){
+            if(window.okhttp){
+                window.okhttp.checkLoggedInReview();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+         }
+
+         function openReviewWindow() {
+             var reviewContent = prompt("리뷰를 작성하세요.");
+             if (reviewContent !== null) {
+                 var currentTime = new Date();
+                 var offset = currentTime.getTimezoneOffset()/60;
+                 var adjustedTime = new Date(currentTime.getTime());
+                 adjustedTime.setHours(adjustedTime.getHours()+offset+9);
+                 var formattedTime = adjustedTime.toISOString().slice(0, 19).replace('T', ' ');
+
+                 console.log("curtime:" +currentTime);
+                 console.log("adjusttime:"+ adjustedTime);
+
+                 if(window.okhttp){
+                     window.okhttp.insertReview(reviewContent,receivedcpName,formattedTime);
+                 }else{
+                     console.log("okhttp interface is not available.");
+                 }
+
+                 callShowReviews();
+             }
+         }
+
+         function callShowReviews(){
+            //초기화
+            document.getElementById('review-data-container').innerHTML = '';
+
+            if(window.okhttp){
+                window.okhttp.showReviewsOfCpName(receivedcpName);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+         }
+
+         function showReview(content,writer,writeTime){
+
+
+            var newReviewElement = document.createElement('div');
+            newReviewElement.classList.add('review');
+
+            var reviewText = content + "<br> <small>"+ writer+ " (" + writeTime + ") </small>";
+            var reviewTextElement = document.createElement('p');
+            reviewTextElement.innerHTML = reviewText;
+            newReviewElement.appendChild(reviewTextElement);
+
+            var reviewContentElement = document.getElementById('review-data-container');
+            var firstReviewElement = reviewContentElement.querySelector('.review');
+            reviewContentElement.insertBefore(newReviewElement, firstReviewElement);
+
+            //구분선 생성
+            var separatorElement = document.createElement('div');
+            separatorElement.classList.add('separator');
+            newReviewElement.appendChild(separatorElement);
+         }
+
+
+         //번역
+         function callTranslate(){
+            var descriptionContent = document.getElementById('description-content');
+            var informationContent = document.getElementById('information-content');
+
+            var desH2Text = descriptionContent.getElementsByTagName('h2')[0].innerText;
+            var desPText = descriptionContent.getElementsByTagName('p')[0].innerText;
+            var infoH2Text = informationContent.getElementsByTagName('h2')[0].innerText;
+            var infoPText = informationContent.getElementsByTagName('p')[0].innerText;
+            var content = desH2Text+'|'+desPText+'|'+infoH2Text+'|'+infoPText;
+
+            if(window.okhttp){
+                window.okhttp.translateUsingPapago(content);
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+         }
+
+         //번역 적용
+         function translateResult(content){
+             console.log("content: "+content);
+             var descriptionContent = document.getElementById('description-content');
+             var informationContent = document.getElementById('information-content');
+
+             var splitContent = content.split('|');
+             descriptionContent.getElementsByTagName('h2')[0].innerText = splitContent[0];
+             descriptionContent.getElementsByTagName('p')[0].innerText = splitContent[1];
+             informationContent.getElementsByTagName('h2')[0].innerText = splitContent[2];
+             informationContent.getElementsByTagName('p')[0].innerText = splitContent[3];
+         }
+
+
+    </script>
 </head>
-<body>
-<!-- 내용 추가 -->
+<body onload="increaseViewCount()">
+<button onclick="goBack()">뒤로 가기</button>
+<div id="explain-container"></div>
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
 </body>
 </html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="3-7.css">
+
+    <style>
+        .item {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .image {
+            width: 100px;
+            height: 100px;
+            margin-right: 10px;
+            background-color: #ECEBEB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .custom-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <script>
+        var searchArray = [];
+
+        function callActivity(){
+            if(window.android){
+                console.info("android");
+                window.android.callSettingsActivity();
+            }
+
+            else{
+                console.info("web");
+                document.form.submit();
+            }
+        }
+
+        function goBack(){
+            window.history.back();
+        }
+
+        function checkLogin(){
+            if(window.okhttp){
+                window.okhttp.checkLogged();
+            }else{
+                console.log("okhttp interface is not available.");
+            }
+        }
+
+        function searchData(dataArray){
+            searchArray.push(dataArray);
+        }
+
+        // 데이터 출력 부분
+        const dataContainer = document.getElementById('data-container');
+
+        function performSearch() {
+            const searchInput = document.getElementById('search-input').value;
+            const selectedCategory = document.getElementById('category-select').value;
+
+            const filteredData = searchArray.filter(item => {
+                if (selectedCategory === 'name') {
+                    return item[0].includes(searchInput);
+                } else if (selectedCategory === 'region') {
+                    return item[1].includes(searchInput);
+                }
+            });
+
+            if (filteredData.length > 0) {
+                updateDataContainer(filteredData);
+            } else {
+                alert("검색 결과가 없습니다.");
+            }
+        }
+
+        function updateDataContainer(dataArray) {
+            const dataContainer = document.getElementById('data-container');
+            dataContainer.innerHTML = ""; // 이전 내용 초기화
+
+            dataArray.forEach((item, index) => {
+                const entry = document.createElement('div');
+                entry.innerHTML = `
+                    <button class="custom-button" onclick="goInfo(this)">
+                        <div class="content-container">
+                            <div class="image">
+                                <img src="${item[2]}" alt="문화재 이미지">
+                            </div>
+                            <div class="info">
+                                <strong>이름:</strong> <span class="name">${item[0]}</span><br>
+                                <strong>주소:</strong> ${item[1]}<br><br>
+                            </div>
+                        </div>
+                    </button>`;
+                dataContainer.appendChild(entry);
+            });
+        }
+
+        function goInfo(button) {
+            var cpLabel = button.querySelector('.name').textContent;
+            console.log(cpLabel);
+            var url = 'info.html' + '?cpName=' + encodeURIComponent(cpLabel);
+            window.location.href = url;
+        }
+    </script>
+
+</head>
+
+<body>
+
+<div id="searchbox">
+    <input type="text" id="search-input" placeholder="검색어를 입력하세요">
+    <div id="search-combobox">
+        <select name="category" id="category-select">
+            <option value="name">이름</option>
+            <option value="region">지역</option>
+        </select>
+    </div>
+    <button id="search-button" onclick="performSearch()">검색</button>
+</div>
+<div id="data-container"></div>
+
+
+<div id="nav-container">
+
+    <div id="search" class="nav-item">
+        <a href="search.html">
+            <i class="fas fa-search">
+                <img src="file:///android_asset/icons/1ic_search.png" alt="검색 이미지">
+            </i>
+            <span>검색</span>
+        </a>
+    </div>
+
+    <div id="find" class="nav-item">
+        <a href="find.html">
+            <i class="fas fa-find">
+                <img src="file:///android_asset/icons/1ic_map.png" alt="탐색 이미지">
+            </i>
+            <span>탐색</span>
+        </a>
+    </div>
+
+    <div id="camera" class="nav-item">
+        <a href="#" onclick="callActivity()">
+            <i class="fas fa-camera">
+                <img src="file:///android_asset/icons/1ic_camera_alt.png" alt="촬영 이미지">
+            </i>
+            <span>촬영</span>
+        </a>
+    </div>
+
+    <div id="recommend" class="nav-item">
+        <a href="recommend_main.html">
+            <i class="fas fa-star">
+                <img src="file:///android_asset/icons/1ic_thumb_up.png" alt="추천 이미지">
+            </i>
+            <span>추천</span>
+        </a>
+    </div>
+
+    <div id="mypage" class="nav-item">
+        <a href="#" onclick="checkLogin()">
+            <i class="fas fa-user">
+                <img src="file:///android_asset/icons/1ic_person.png" alt="마페 이미지">
+            </i>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

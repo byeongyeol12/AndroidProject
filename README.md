@@ -14,6 +14,12 @@
   - `HTML`, `CSS`, `JavaScript`
   - `Python (Deep Learning)`
   - `PHP`
+ 
+## 💻 프로젝트 담당 부분
+
+- html css 로 간단한 프론트 페이지 구현
+- cnn모델을 활용한 딥러닝 모델 생성
+- java로 기능 구현
 
 ## 💡 주요 기능
 
